@@ -30,6 +30,16 @@ jobs:
       run: |
         # 从 Secrets 中读取配置并写入 oci-help.ini
         echo "${{ secrets.OCI_CONFIG }}" > oci-help.ini
+        
+        # 处理私钥文件：从 Secret 读取并写入固定文件名
+        if [ -n "${{ secrets.OCI_KEY_CONTENT }}" ]; then
+          echo "${{ secrets.OCI_KEY_CONTENT }}" > oci_api_key.pem
+          # 修改配置文件中的 key_file 路径
+          sed -i 's|^key_file=.*|key_file=oci_api_key.pem|' oci-help.ini
+        else
+          echo "Warning: OCI_KEY_CONTENT secret is not set. Authentication may fail if key_file path is invalid."
+        fi
+
         if [ ! -s oci-help.ini ]; then
           echo "Error: OCI_CONFIG secret is empty or not set."
           exit 1
