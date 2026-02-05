@@ -72,6 +72,7 @@ var (
 	proxy               string
 	token               string
 	chat_id             string
+	barkUrl             string
 	cmd                 string
 	sendMessageUrl      string
 	editMessageUrl      string
@@ -130,6 +131,7 @@ func main() {
 	proxy = defSec.Key("proxy").Value()
 	token = defSec.Key("token").Value()
 	chat_id = defSec.Key("chat_id").Value()
+	barkUrl = defSec.Key("bark").Value()
 	cmd = defSec.Key("cmd").Value()
 	if defSec.HasKey("EACH") {
 		EACH, _ = defSec.Key("EACH").Bool()
@@ -2368,10 +2370,25 @@ func sendMessage(name, text string) (msg Message, err error) {
 		if err != nil {
 			return
 		}
+		if err != nil {
+			return
+		}
 		if !msg.OK {
 			err = errors.New(msg.Description)
 			return
 		}
+	}
+	if barkUrl != "" {
+		encodedText := url.QueryEscape(text)
+		requestUrl := fmt.Sprintf("%s/甲骨文通知-%s/%s", barkUrl, name, encodedText)
+		var req *http.Request
+		req, err = http.NewRequest(http.MethodGet, requestUrl, nil)
+		if err != nil {
+			return
+		}
+		client := common.BaseClient{HTTPClient: &http.Client{}}
+		setProxyOrNot(&client)
+		_, err = client.HTTPClient.Do(req)
 	}
 	return
 }

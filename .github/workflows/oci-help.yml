@@ -1,0 +1,43 @@
+name: Run OCI Help
+
+on:
+  # 手动触发
+  workflow_dispatch:
+  # 定时触发 (例如每 6 小时运行一次，GitHub Actions 单次最长运行 6 小时)
+  # 注意：这可能会消耗大量的 GitHub Actions 分钟数，请谨慎设置频率
+  schedule:
+    - cron: '0 */6 * * *'
+
+jobs:
+  run-oci-help:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.20'
+
+    - name: Build
+      run: |
+        go mod download
+        go build -v -o oci-help .
+
+    - name: Create Config File
+      run: |
+        # 从 Secrets 中读取配置并写入 oci-help.ini
+        echo "${{ secrets.OCI_CONFIG }}" > oci-help.ini
+        if [ ! -s oci-help.ini ]; then
+          echo "Error: OCI_CONFIG secret is empty or not set."
+          exit 1
+        fi
+
+    - name: Run OCI Help
+      run: |
+        # 使用 timeout 限制运行时间（例如 350 分钟，留点缓冲防止强制 kill）
+        # 使用管道自动输入 "oci"
+        # 注意：yes oci 会疯狂输出，可能导致日志过大，所以我们用 while 循环控制频率
+        timeout 350m bash -c 'while true; do echo "oci"; sleep 5; done | ./oci-help' || true

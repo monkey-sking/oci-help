@@ -17,5 +17,6 @@
 .DS_Store
 
 *.pem
+oci-help.ini
 build/
 example/
